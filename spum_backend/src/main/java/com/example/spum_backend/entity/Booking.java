@@ -1,6 +1,8 @@
 package com.example.spum_backend.entity;
 
 import com.example.spum_backend.enumeration.BookingStatusEnum;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -32,6 +34,7 @@ public class Booking {
     private Student student;
 
     @ManyToOne
+
     @JoinColumn(name = "itemId", referencedColumnName = "itemId")
     private Item item;
 

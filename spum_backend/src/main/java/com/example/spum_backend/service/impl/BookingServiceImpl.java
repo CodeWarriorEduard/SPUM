@@ -4,6 +4,7 @@ import com.example.spum_backend.dto.request.BookingRequestDTO;
 import com.example.spum_backend.dto.request.BookingUpdateStatusRequestDTO;
 import com.example.spum_backend.dto.request.PenaltyRequestDTO;
 import com.example.spum_backend.dto.response.BookingResponseDTO;
+import com.example.spum_backend.dto.response.FileInfoResponseDTO;
 import com.example.spum_backend.entity.Booking;
 import com.example.spum_backend.entity.Item;
 import com.example.spum_backend.entity.Penalty;
@@ -12,6 +13,7 @@ import com.example.spum_backend.enumeration.BookingStatusEnum;
 import com.example.spum_backend.exception.BookingConflict;
 import com.example.spum_backend.exception.BookingNotFoundException;
 import com.example.spum_backend.repository.BookingRepository;
+import com.example.spum_backend.service.InvoiceService;
 import com.example.spum_backend.service.interfaces.BookingService;
 import com.example.spum_backend.service.interfaces.PenaltyService;
 import com.example.spum_backend.service.interfaces.internal.BookingServiceEntity;
@@ -24,9 +26,8 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class BookingServiceImpl implements BookingService, BookingServiceEntity {
@@ -37,16 +38,19 @@ public class BookingServiceImpl implements BookingService, BookingServiceEntity 
     private final StudentServiceEntity studentServiceEntity;
     private final ModelMapper modelMapper;
     private final PenaltyService penaltyService;
+    private final InvoiceService invoiceService; // Fix and use an interface
 
-    public BookingServiceImpl(BookingRepository bookingRepository, ItemServiceEntity itemServiceEntity, PenaltyServiceEntity penaltyServiceEntity, StudentServiceEntity studentServiceEntity, ModelMapper modelMapper, PenaltyService penaltyService) {
+    public BookingServiceImpl(BookingRepository bookingRepository, ItemServiceEntity itemServiceEntity, PenaltyServiceEntity penaltyServiceEntity, StudentServiceEntity studentServiceEntity, ModelMapper modelMapper, PenaltyService penaltyService, InvoiceService invoiceService) {
         this.bookingRepository = bookingRepository;
         this.itemServiceEntity = itemServiceEntity;
         this.penaltyServiceEntity = penaltyServiceEntity;
         this.studentServiceEntity = studentServiceEntity;
         this.modelMapper = modelMapper;
         this.penaltyService = penaltyService;
+        this.invoiceService = invoiceService;
     }
 
+    //
     private long getClosingHour(){
         ZoneId zoneId = ZoneId.of("America/Bogota");
         ZonedDateTime zonedDateTime = ZonedDateTime.now(zoneId);
@@ -107,6 +111,8 @@ public class BookingServiceImpl implements BookingService, BookingServiceEntity 
         bookingToUpdate.setBookingStatus(bookingUpdateStatusRequestDTO.getStatus());
         bookingRepository.save(bookingToUpdate);
     }
+
+
 
     @Override
     public List<Booking> getAllBookingsSoonToEnd() {
@@ -170,6 +176,22 @@ public class BookingServiceImpl implements BookingService, BookingServiceEntity 
                 penaltyService.createPenalty(new PenaltyRequestDTO(description, LocalDateTime.now(), 1L,booking.getStudent().getUser().getEmail()));
             }
         }
+    }
+
+
+    @Override
+    public FileInfoResponseDTO markABookingAsReturned(Long id) {
+        Booking booking = getBookingById(id);
+        updateBookingStatus(new BookingUpdateStatusRequestDTO(BookingStatusEnum.RETURNED, booking.getBookingId()));
+        return invoiceService.getInvoiceFile(booking);
+    }
+
+
+    @Override
+    public List<BookingResponseDTO> getAllBookingsByStudent(Long id) {
+        System.out.println(bookingRepository.findAllByStudent_StudentId(id));
+        return bookingRepository.findAllByStudent_StudentId(id)
+                .stream().map((booking)-> modelMapper.map(booking, BookingResponseDTO.class)).collect(Collectors.toList());
     }
 }
 

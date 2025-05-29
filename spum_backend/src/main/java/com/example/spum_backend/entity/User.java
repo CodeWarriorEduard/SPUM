@@ -1,6 +1,7 @@
 package com.example.spum_backend.entity;
 
 import com.example.spum_backend.enumeration.RolesEnum;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,7 +26,7 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long userId;
 
-    private String userName;
+    private String userFirstName;
     private String userLastName;
     private String email;
     private String password;
@@ -33,6 +34,7 @@ public class User implements UserDetails {
     private RolesEnum role;
 
     @OneToOne(mappedBy = "user")
+    @JsonManagedReference
     private Student student;
 
     @Override

@@ -1,6 +1,10 @@
 package com.example.spum_backend.config;
 
+import com.example.spum_backend.dto.response.BookingResponseDTO;
+import com.example.spum_backend.entity.Booking;
+import org.modelmapper.Conditions;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.PropertyMap;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -12,7 +16,6 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import java.util.Properties;
 
 @Configuration
-
 public class AppConfig {
 
     @Value("${java.mail.username}")
@@ -28,6 +31,19 @@ public class AppConfig {
     public ModelMapper modelMapper() {
         ModelMapper modelMapper = new ModelMapper();
         modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
+        modelMapper.getConfiguration().setPropertyCondition(Conditions.isNotNull());
+
+        modelMapper.addMappings(new PropertyMap<Booking, BookingResponseDTO>() {
+
+            @Override
+            protected void configure() {
+                map().setStartTime(source.getStartTime());
+                map().setEndTime(source.getEndTime());
+                map().getStudent().setStudentName(source.getStudent().getUser().getUserFirstName());
+                map().getStudent().setEmail(source.getStudent().getUser().getEmail());
+            }
+
+        });
         return modelMapper  ;
     }
 

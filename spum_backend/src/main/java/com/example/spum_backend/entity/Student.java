@@ -1,5 +1,8 @@
 package com.example.spum_backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,12 +27,21 @@ public class Student {
 
     @OneToOne
     @JoinColumn(name = "userId", referencedColumnName = "userId")
+    @JsonBackReference
     private User user;
 
     @OneToMany(mappedBy = "student")
+    @JsonManagedReference
     private List<Booking> bookings;
 
     @OneToMany(mappedBy = "student")
+    @JsonManagedReference
     private List<Penalty> penalties;
 
+    @Override
+    public String toString() {
+        return "Student{" +
+                "user=" + user.getUserFirstName() +
+                '}';
+    }
 }

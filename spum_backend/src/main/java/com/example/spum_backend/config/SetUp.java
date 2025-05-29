@@ -23,7 +23,7 @@ public class SetUp implements ApplicationListener<ContextRefreshedEvent> {
     public void createAdmin(){
         if(!userRepository.existsByEmail("admin@spum-backend.com")){
             User user = User.builder()
-                    .userName("admin")
+                    .userFirstName("admin")
                     .userLastName("admin")
                     .email("admin@spum-backend.com")
                     .password(passwordEncoder.encode("admin"))

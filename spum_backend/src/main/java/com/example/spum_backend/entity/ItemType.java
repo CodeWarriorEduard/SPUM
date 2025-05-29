@@ -1,7 +1,10 @@
 package com.example.spum_backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.List;
 
 @Entity
 @Data
@@ -17,6 +20,6 @@ public class ItemType {
 
     private String itemTypeName;
 
-    @OneToOne(mappedBy = "itemType")
-    private Item item;
+    @OneToMany(mappedBy = "itemType")
+    private List<Item> item;
 }

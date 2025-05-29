@@ -1,5 +1,7 @@
 package com.example.spum_backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,11 +24,22 @@ public class Item {
     private String itemDescription;
     private Long itemQuantity;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "itemTypeId", referencedColumnName = "itemTypeId")
     private ItemType itemType;
 
     @OneToMany
+    @JsonIgnore
     private List<Booking> bookings;
 
+    @Override
+    public String toString() {
+        return "Item{" +
+                "itemType=" + itemType.getItemTypeName() +
+                ", itemQuantity=" + itemQuantity +
+                ", itemDescription='" + itemDescription + '\'' +
+                ", itemName='" + itemName + '\'' +
+                ", itemId=" + itemId +
+                '}';
+    }
 }

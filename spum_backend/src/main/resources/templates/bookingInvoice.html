@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="src/main/resources/templates/style.css" th:href="@{src/main/resources/templates/style.css}">
+    <title>Document</title>
+</head>
+<body>
+    <div class="invoice-container">
+        <h1>Constancia de devolución - SPUM</h1>
+        <p><strong>A nombre de:</strong></p>
+        <p th:text="${nombre} +' '+ ${apellido}">Nombre</p>
+        <div class="table-container">
+            <table>
+                <thead>
+                <tr>
+                    <th>Artículo</th>
+                    <th>Hora inicio</th>
+                    <th>Hora fin</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td th:text="${articulo}">Ej. Laptop</td>
+                    <td th:text="${hora_inicio}">08:00</td>
+                    <td th:text="${hora_fin}">10:00</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

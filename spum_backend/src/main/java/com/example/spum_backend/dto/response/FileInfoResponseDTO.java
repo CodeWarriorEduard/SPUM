@@ -1,6 +1,5 @@
 package com.example.spum_backend.dto.response;
 
-import com.example.spum_backend.dto.ItemTypeDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,9 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ItemResponseDTO{
-    String itemName;
-    String itemDescription;
-    Long itemQuantity;
-    ItemTypeDTO itemType;
+public class FileInfoResponseDTO {
+    byte[] file;
+    String fileName;
 }

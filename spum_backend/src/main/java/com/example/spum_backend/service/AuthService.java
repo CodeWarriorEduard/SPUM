@@ -39,7 +39,7 @@ public class AuthService {
 
         User user = User
                 .builder()
-                .userName(student.getFirstName())
+                .userFirstName(student.getFirstName())
                 .userLastName(student.getLastName())
                 .email(student.getEmail())
                 .password(passwordEncoder.encode(student.getPassword()))
@@ -66,7 +66,7 @@ public class AuthService {
 
         User userToRegister = User
                 .builder()
-                .userName(user.getName())
+                .userFirstName(user.getName())
                 .userLastName(user.getLastName())
                 .email(user.getEmail())
                 .password(passwordEncoder.encode(user.getPassword()))

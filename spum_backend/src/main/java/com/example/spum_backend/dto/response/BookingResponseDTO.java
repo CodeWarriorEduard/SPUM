@@ -10,8 +10,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class BookingResponseDTO{
-    String userName;
-    String userLastName;
+    StudentResponseDTO student;
     LocalDateTime startTime;
     LocalDateTime endTime;
 }

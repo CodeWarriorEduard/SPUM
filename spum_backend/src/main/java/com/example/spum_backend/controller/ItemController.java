@@ -1,6 +1,7 @@
 package com.example.spum_backend.controller;
 
 import com.example.spum_backend.dto.request.ItemRequestDTO;
+import com.example.spum_backend.dto.request.ItemUpdateRequest;
 import com.example.spum_backend.dto.response.ItemResponseDTO;
 import com.example.spum_backend.service.interfaces.ItemService;
 import org.springframework.web.bind.annotation.*;
@@ -30,5 +31,15 @@ public class ItemController {
     @PostMapping("/add")
     public ItemResponseDTO addItem(@RequestBody ItemRequestDTO itemRequestDTO) {
         return itemService.addItem(itemRequestDTO);
+    }
+
+    @PutMapping("/{id}")
+    public ItemResponseDTO updateItem(@PathVariable Long id, @RequestBody ItemUpdateRequest itemRequestDTO) {
+        return itemService.updateItem(itemRequestDTO);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteItem(@PathVariable Long id) {
+        itemService.deleteItemById(id);
     }
 }

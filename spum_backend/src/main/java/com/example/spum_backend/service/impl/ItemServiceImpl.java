@@ -1,6 +1,7 @@
 package com.example.spum_backend.service.impl;
 
 import com.example.spum_backend.dto.request.ItemRequestDTO;
+import com.example.spum_backend.dto.request.ItemUpdateRequest;
 import com.example.spum_backend.dto.response.ItemResponseDTO;
 import com.example.spum_backend.entity.Item;
 import com.example.spum_backend.entity.ItemType;
@@ -23,18 +24,17 @@ public class ItemServiceImpl implements ItemService, ItemServiceEntity {
 
     private final ItemRepository itemRepository;
     private final ModelMapper modelMapper;
-    private final ItemTypeRepository itemTypeRepository;
     private final ItemTypeServiceEntity itemTypeService;
 
-    public ItemServiceImpl(ItemRepository itemRepository, ModelMapper modelMapper, ItemTypeRepository itemTypeRepository, ItemTypeServiceEntity itemTypeService) {
+    public ItemServiceImpl(ItemRepository itemRepository, ModelMapper modelMapper, ItemTypeServiceEntity itemTypeService) {
         this.itemRepository = itemRepository;
         this.modelMapper = modelMapper;
-        this.itemTypeRepository = itemTypeRepository;
         this.itemTypeService = itemTypeService;
     }
 
     @Override
     public List<ItemResponseDTO> findAllItems() {
+        System.out.println(itemRepository.findAll());
         return itemRepository.findAll()
                 .stream().map(item -> modelMapper.map(item, ItemResponseDTO.class))
                 .collect(Collectors.toList());
@@ -79,5 +79,27 @@ public class ItemServiceImpl implements ItemService, ItemServiceEntity {
     @Override
     public Item saveItem(Item item) {
         return itemRepository.save(item);
+    }
+
+    @Override
+    public ItemResponseDTO updateItem(ItemUpdateRequest item) {
+
+        Item itemToUpdate = getItemById(item.getItemId());
+
+        if(!item.getItemDescription().isBlank()){
+            itemToUpdate.setItemDescription(item.getItemDescription());
+        }
+        if(!item.getItemName().isBlank()){
+            itemToUpdate.setItemName(item.getItemName());
+        }
+        if (item.getItemQuantity()!=null){
+            itemToUpdate.setItemQuantity(item.getItemQuantity());
+        }
+
+        if(item.getItemTypeId()!=null){
+            ItemType type = itemTypeService.getItemTypeById(item.getItemTypeId());
+            itemToUpdate.setItemType(type);
+        }
+        return modelMapper.map(itemRepository.save(itemToUpdate), ItemResponseDTO.class);
     }
 }

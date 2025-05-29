@@ -1,6 +1,6 @@
-package com.example.spum_backend.dto.response;
+package com.example.spum_backend.dto.request;
 
-import com.example.spum_backend.dto.ItemTypeDTO;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,9 +8,11 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ItemResponseDTO{
+public class ItemUpdateRequest {
+
+    Long itemId;
     String itemName;
     String itemDescription;
     Long itemQuantity;
-    ItemTypeDTO itemType;
+    Long itemTypeId;
 }

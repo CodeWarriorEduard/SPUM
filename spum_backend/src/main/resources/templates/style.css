@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+
+
+*{
+    font-family: "Outfit", sans-serif;
+    font-optical-sizing: auto;
+}
+
+
+table, th, td{
+    border: 1px solid black;
+    width: 400px;
+}
+
+.invoice-container{
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    border: 2px solid black;
+    width: 100vw;
+    height: 500px;
+
+}
+
+
+.table-container{
+    display: flex;
+    margin-top: 40px;
+    flex-direction: column;
+    justify-content: center;
+}
