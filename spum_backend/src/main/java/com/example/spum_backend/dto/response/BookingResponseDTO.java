@@ -14,4 +14,5 @@ public class BookingResponseDTO{
     String userLastName;
     LocalDateTime startTime;
     LocalDateTime endTime;
+    String item;
 }

@@ -1,6 +1,6 @@
 package com.example.spum_backend.dto.request;
 
-import com.example.spum_backend.enumeration.BookingStatusEnum;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,9 +8,6 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class BookingUpdateStatusRequestDTO {
-
-    BookingStatusEnum status;
-    Long bookingId;
-
+public class ItemTypeDTO {
+    @NotBlank String itemTypeName;
 }

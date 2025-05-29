@@ -1,4 +1,4 @@
-package com.example.spum_backend.config.security;
+package com.example.spum_backend.config.security.services;
 
 import com.example.spum_backend.repository.UserRepository;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,6 +18,7 @@ public class UserDetailServiceApp implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return userRepository.findByEmail(username)
+                .map(UserInfoDetail::new)  // <- esta es la conversión correcta
                 .orElseThrow(() -> new UsernameNotFoundException(username));
     }
 }

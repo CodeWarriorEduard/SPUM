@@ -3,6 +3,8 @@ package com.example.spum_backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Entity
 @Data
 @AllArgsConstructor
@@ -17,6 +19,7 @@ public class ItemType {
 
     private String itemTypeName;
 
-    @OneToOne(mappedBy = "itemType")
-    private Item item;
+    @OneToMany(mappedBy = "itemType")
+    private List<Item> items;
+
 }

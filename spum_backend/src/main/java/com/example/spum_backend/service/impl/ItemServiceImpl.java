@@ -4,13 +4,15 @@ import com.example.spum_backend.dto.request.ItemRequestDTO;
 import com.example.spum_backend.dto.response.ItemResponseDTO;
 import com.example.spum_backend.entity.Item;
 import com.example.spum_backend.entity.ItemType;
-import com.example.spum_backend.exception.ItemNotFoundException;
-import com.example.spum_backend.exception.ItemTypeNotFoundException;
+import com.example.spum_backend.exception.notFound.ItemNotFoundException;
+import com.example.spum_backend.exception.notFound.ItemTypeNotFoundException;
+import com.example.spum_backend.mapper.ItemMapper;
 import com.example.spum_backend.repository.ItemRepository;
 import com.example.spum_backend.repository.ItemTypeRepository;
 import com.example.spum_backend.service.interfaces.ItemService;
 import com.example.spum_backend.service.interfaces.internal.ItemServiceEntity;
 import com.example.spum_backend.service.interfaces.internal.ItemTypeServiceEntity;
+import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
@@ -18,51 +20,80 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-
+@AllArgsConstructor
 public class ItemServiceImpl implements ItemService, ItemServiceEntity {
 
     private final ItemRepository itemRepository;
-    private final ModelMapper modelMapper;
-    private final ItemTypeRepository itemTypeRepository;
+    private final ItemMapper itemMapper;
     private final ItemTypeServiceEntity itemTypeService;
+    private final ItemTypeRepository itemTypeRepository;
 
-    public ItemServiceImpl(ItemRepository itemRepository, ModelMapper modelMapper, ItemTypeRepository itemTypeRepository, ItemTypeServiceEntity itemTypeService) {
-        this.itemRepository = itemRepository;
-        this.modelMapper = modelMapper;
-        this.itemTypeRepository = itemTypeRepository;
-        this.itemTypeService = itemTypeService;
-    }
 
     @Override
     public List<ItemResponseDTO> findAllItems() {
         return itemRepository.findAll()
-                .stream().map(item -> modelMapper.map(item, ItemResponseDTO.class))
-                .collect(Collectors.toList());
+                .stream().map(itemMapper::toDto).toList();
     }
 
     @Override
     public ItemResponseDTO findItemById(Long id) {
-        Item item = getItemById(id);
-        return modelMapper.map(item, ItemResponseDTO.class);
+        return itemRepository.findById(id)
+                .map(itemMapper::toDto)
+                .orElseThrow(()-> new ItemNotFoundException("Item not found"));
     }
 
     @Override
+    public List<ItemResponseDTO> findItemByName(String nombre) {
+        List<Item> items = itemRepository.findByItemNameContainingIgnoreCase(nombre);
+        if (items.isEmpty()) {
+            throw new ItemNotFoundException("No se encontró ningún item con el nombre que contiene: " + nombre);
+        }
+        return items.stream()
+                .map(itemMapper::toDto)
+                .toList();
+    }
+    @Override
     public ItemResponseDTO addItem(ItemRequestDTO item) {
-        Item itemToSave = modelMapper.map(item, Item.class);
+        Item itemToSave = itemMapper.toEntity(item);
 
         // Look for the item type
         ItemType itemType = itemTypeService.getItemTypeById(item.getItemType());
 
         itemToSave.setItemType(itemType);
 
-        return modelMapper.map(itemRepository.save(itemToSave), ItemResponseDTO.class);
+        return itemMapper.toDto(itemRepository.save(itemToSave));
+    }
+
+    @Override
+    public ItemResponseDTO updateItem(Long id, ItemRequestDTO item) {
+        Item itemToUpdate = getItemById(id);
+        itemToUpdate.setItemName
+                (item.getItemName()==null?itemToUpdate.getItemName():item.getItemName());
+        itemToUpdate.setItemDescription
+                (item.getItemDescription()==null?itemToUpdate.getItemDescription():item.getItemDescription());
+        itemToUpdate.setItemQuantity
+                (item.getItemQuantity()==null?itemToUpdate.getItemQuantity():item.getItemQuantity());
+
+        if(item.getItemType()!=null){
+            ItemType itemType = itemTypeService.getItemTypeById(item.getItemType());
+            itemToUpdate.setItemType(itemType);
+        }
+
+        return itemMapper.toDto(itemRepository.save(itemToUpdate));
     }
 
     @Override
     public void deleteItemById(Long id) {
-        Item item = getItemById(id);
-        itemRepository.delete(item);
+        itemRepository.delete(getItemById(id));
     }
+
+    @Override
+    public List<ItemResponseDTO> findItemByItemType(Long id) {
+        return itemRepository.findItemByItemType(itemTypeRepository.findById(id)
+                .orElseThrow(()-> new ItemTypeNotFoundException("Item Type with id: " + id + " not found")))
+                .stream().map(itemMapper::toDto).toList();
+    }
+
 
     // Service methods for inner tasks.
     @Override

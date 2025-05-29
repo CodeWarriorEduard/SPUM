@@ -1,10 +1,15 @@
 package com.example.spum_backend.controller;
 
 import com.example.spum_backend.dto.request.StudentUserRegisterRequestDTO;
-import com.example.spum_backend.dto.request.UserLoginRequestDTO;
-import com.example.spum_backend.dto.request.UserRegisterRequestDTO;
+import com.example.spum_backend.dto.request.user.UserLoginRequestDTO;
+import com.example.spum_backend.dto.request.user.UserRegisterRequestDTO;
+import com.example.spum_backend.dto.response.StudentResponseDTO;
 import com.example.spum_backend.dto.response.TokenResponseDTO;
+import com.example.spum_backend.dto.response.UserInfo;
 import com.example.spum_backend.service.AuthService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,19 +24,17 @@ public class AuthController {
     }
 
     @PostMapping("/register-student")
-    public String registerStudent(@RequestBody StudentUserRegisterRequestDTO studentUserRegisterRequestDTO) {
-        authService.registerStudent(studentUserRegisterRequestDTO);
-        return "Student registered successfully";
+    public ResponseEntity<StudentResponseDTO> registerStudent(@RequestBody @Valid StudentUserRegisterRequestDTO request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerStudent(request));
     }
 
     @PostMapping("/register-user")
-    public String registerUser(@RequestBody UserRegisterRequestDTO userDetails) {
-        authService.registerUser(userDetails);
-        return "User registered successfully";
+    public ResponseEntity<UserInfo> registerUser(@RequestBody @Valid UserRegisterRequestDTO userDetails) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerUser(userDetails));
     }
 
     @PostMapping("/login")
-    public TokenResponseDTO login(@RequestBody UserLoginRequestDTO loginDetails){
-        return authService.login(loginDetails);
+    public ResponseEntity<TokenResponseDTO> login(@RequestBody @Valid UserLoginRequestDTO loginDetails){
+        return ResponseEntity.ok(authService.login(loginDetails));
     }
 }

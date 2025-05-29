@@ -12,4 +12,5 @@ public interface PenaltyService {
     PenaltyResponseDTO createPenalty(PenaltyRequestDTO penaltyRequestDTO);
     void deletePenalty(Long id);
     void removePenaltyFromUser(PenaltyUserRequestDTO penaltyUserRequestDTO);
+    PenaltyResponseDTO updatePenalty(Long id, PenaltyRequestDTO penaltyRequestDTO);
 }

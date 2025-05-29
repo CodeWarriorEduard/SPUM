@@ -23,10 +23,10 @@ public class Student {
     private Long studentCollegeId;
 
     @OneToOne
-    @JoinColumn(name = "userId", referencedColumnName = "userId")
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
 
-    @OneToMany(mappedBy = "student")
+    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Booking> bookings;
 
     @OneToMany(mappedBy = "student")

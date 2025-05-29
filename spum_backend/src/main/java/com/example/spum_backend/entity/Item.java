@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.util.List;
 
@@ -11,6 +12,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString(exclude = "itemType")
 @Table(name = "items")
 public class Item {
 
@@ -22,11 +24,11 @@ public class Item {
     private String itemDescription;
     private Long itemQuantity;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "itemTypeId", referencedColumnName = "itemTypeId")
     private ItemType itemType;
 
-    @OneToMany
+    @OneToMany(mappedBy = "item")
     private List<Booking> bookings;
 
 }

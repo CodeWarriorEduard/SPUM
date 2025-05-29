@@ -2,7 +2,8 @@ package com.example.spum_backend.service.impl;
 
 import com.example.spum_backend.dto.response.StudentResponseDTO;
 import com.example.spum_backend.entity.Student;
-import com.example.spum_backend.exception.StudentNotFoundException;
+import com.example.spum_backend.exception.BookingConflict;
+import com.example.spum_backend.exception.notFound.StudentNotFoundException;
 import com.example.spum_backend.repository.StudentRepository;
 import com.example.spum_backend.service.interfaces.StudentService;
 import com.example.spum_backend.service.interfaces.internal.StudentServiceEntity;
@@ -22,8 +23,11 @@ public class StudentServiceImpl implements StudentService, StudentServiceEntity 
 
 
     @Override
-    public void deleteStudent(String studentId) {
+    public void deleteStudent(String email) {
+        Student student = studentRepository.findByUser_Email(email)
+                .orElseThrow(() -> new StudentNotFoundException("Student not found: " + email));
 
+        studentRepository.delete(student);
     }
 
     @Override
@@ -39,7 +43,7 @@ public class StudentServiceImpl implements StudentService, StudentServiceEntity 
 
     @Override
     public Student getStudentById(Long id) {
-        return studentRepository.findById(id).orElseThrow(() -> new StudentNotFoundException("Student not found"));
+        return studentRepository.findById(id).orElseThrow(() -> new BookingConflict.StudentNotFoundException("Student not found"));
     }
 
 
@@ -51,6 +55,6 @@ public class StudentServiceImpl implements StudentService, StudentServiceEntity 
     @Override
     public Student findStudentByEmail(String email) {
         return studentRepository.findByUser_Email(email)
-                .orElseThrow(() -> new StudentNotFoundException("Student not found"));
+                .orElseThrow(() -> new BookingConflict.StudentNotFoundException("Student not found"));
     }
 }

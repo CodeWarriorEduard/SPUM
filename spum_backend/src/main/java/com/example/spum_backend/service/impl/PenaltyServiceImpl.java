@@ -6,7 +6,8 @@ import com.example.spum_backend.dto.response.PenaltyResponseDTO;
 import com.example.spum_backend.entity.Penalty;
 import com.example.spum_backend.entity.PenaltyType;
 import com.example.spum_backend.entity.Student;
-import com.example.spum_backend.exception.PenaltyNotFoundException;
+import com.example.spum_backend.exception.notFound.PenaltyNotFoundException;
+import com.example.spum_backend.mapper.PenaltyMapper;
 import com.example.spum_backend.repository.PenaltyRepository;
 import com.example.spum_backend.service.interfaces.PenaltyService;
 import com.example.spum_backend.service.interfaces.internal.PenaltyServiceEntity;
@@ -23,25 +24,25 @@ import java.util.stream.Collectors;
 @Service
 public class PenaltyServiceImpl implements PenaltyService, PenaltyServiceEntity {
 
-    private final ModelMapper modelMapper;
     private final PenaltyRepository penaltyRepository;
     private final StudentServiceEntity studentServiceEntity;
     private final PenaltyTypeServiceEntity penaltyTypeServiceEntity;
+    private final PenaltyMapper penaltyMapper;
+    private final PenaltyTypeServiceImpl penaltyTypeServiceImpl;
 
 
-    public PenaltyServiceImpl(ModelMapper modelMapper, PenaltyRepository penaltyRepository, StudentServiceEntity studentServiceEntity, PenaltyTypeServiceEntity penaltyTypeServiceEntity) {
-        this.modelMapper = modelMapper;
+    public PenaltyServiceImpl(PenaltyRepository penaltyRepository, StudentServiceEntity studentServiceEntity, PenaltyTypeServiceEntity penaltyTypeServiceEntity, PenaltyMapper penaltyMapper, PenaltyTypeServiceImpl penaltyTypeServiceImpl) {
         this.penaltyRepository = penaltyRepository;
         this.studentServiceEntity = studentServiceEntity;
         this.penaltyTypeServiceEntity = penaltyTypeServiceEntity;
+        this.penaltyMapper = penaltyMapper;
+        this.penaltyTypeServiceImpl = penaltyTypeServiceImpl;
     }
 
     @Override
     public List<PenaltyResponseDTO> getAllPenalties() {
         return penaltyRepository.findAll()
-                .stream()
-                .map((penalty) -> modelMapper.map(penalty, PenaltyResponseDTO.class))
-                .collect(Collectors.toList());
+                .stream().map(penaltyMapper::toDTO).toList();
     }
 
     @Override
@@ -55,8 +56,6 @@ public class PenaltyServiceImpl implements PenaltyService, PenaltyServiceEntity 
 
         // depending on the penalty type different times
 
-
-
         // Applying the penalty.
 
         Penalty penalty = Penalty.builder()
@@ -67,13 +66,12 @@ public class PenaltyServiceImpl implements PenaltyService, PenaltyServiceEntity 
                 .student(student)
                 .build();
 
-        return modelMapper.map(penaltyRepository.save(penalty), PenaltyResponseDTO.class);
+        return penaltyMapper.toDTO(penaltyRepository.save(penalty));
     }
 
     @Override
     public void deletePenalty(Long id) {
-        Penalty penalty = getPenaltyById(id);
-        penaltyRepository.delete(penalty);
+        penaltyRepository.delete(getPenaltyById(id));
     }
 
     @Override
@@ -86,6 +84,22 @@ public class PenaltyServiceImpl implements PenaltyService, PenaltyServiceEntity 
         penalty.setStudent(null);
 
         penaltyRepository.delete(penalty);
+    }
+
+    @Override
+    public PenaltyResponseDTO updatePenalty(Long id, PenaltyRequestDTO penaltyRequestDTO) {
+        Penalty penaltyToUpdate = getPenaltyById(id);
+
+        penaltyToUpdate.setDescription
+                (penaltyRequestDTO.getDescription()==null?penaltyToUpdate.getDescription():penaltyRequestDTO.getDescription());
+        penaltyToUpdate.setPenaltyDate
+                (penaltyRequestDTO.getPenaltyDate()==null?penaltyToUpdate.getPenaltyDate():penaltyRequestDTO.getPenaltyDate());
+        penaltyToUpdate.setType
+                (penaltyRequestDTO.getPenaltyType()!=null?penaltyTypeServiceImpl.getPenaltyTypeEntityById(penaltyRequestDTO.getPenaltyType()):penaltyToUpdate.getType());
+        penaltyToUpdate.setStudent
+                (penaltyRequestDTO.getEmail()!=null?studentServiceEntity.findStudentByEmail(penaltyRequestDTO.getEmail()):penaltyToUpdate.getStudent());
+
+        return penaltyMapper.toDTO(penaltyRepository.save(penaltyToUpdate));
     }
 
 

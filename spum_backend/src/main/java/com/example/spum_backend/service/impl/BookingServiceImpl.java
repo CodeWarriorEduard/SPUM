@@ -1,16 +1,16 @@
 package com.example.spum_backend.service.impl;
 
-import com.example.spum_backend.dto.request.BookingRequestDTO;
-import com.example.spum_backend.dto.request.BookingUpdateStatusRequestDTO;
+import com.example.spum_backend.dto.request.booking.BookingCreateRequestDTO;
+import com.example.spum_backend.dto.request.booking.BookingUpdateRequestDTO;
 import com.example.spum_backend.dto.request.PenaltyRequestDTO;
 import com.example.spum_backend.dto.response.BookingResponseDTO;
 import com.example.spum_backend.entity.Booking;
 import com.example.spum_backend.entity.Item;
-import com.example.spum_backend.entity.Penalty;
 import com.example.spum_backend.entity.Student;
 import com.example.spum_backend.enumeration.BookingStatusEnum;
 import com.example.spum_backend.exception.BookingConflict;
-import com.example.spum_backend.exception.BookingNotFoundException;
+import com.example.spum_backend.exception.notFound.BookingNotFoundException;
+import com.example.spum_backend.mapper.BookingMapper;
 import com.example.spum_backend.repository.BookingRepository;
 import com.example.spum_backend.service.interfaces.BookingService;
 import com.example.spum_backend.service.interfaces.PenaltyService;
@@ -18,158 +18,204 @@ import com.example.spum_backend.service.interfaces.internal.BookingServiceEntity
 import com.example.spum_backend.service.interfaces.internal.ItemServiceEntity;
 import com.example.spum_backend.service.interfaces.internal.PenaltyServiceEntity;
 import com.example.spum_backend.service.interfaces.internal.StudentServiceEntity;
-import org.modelmapper.ModelMapper;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
+@AllArgsConstructor
 public class BookingServiceImpl implements BookingService, BookingServiceEntity {
 
     private final BookingRepository bookingRepository;
     private final ItemServiceEntity itemServiceEntity;
     private final PenaltyServiceEntity penaltyServiceEntity;
     private final StudentServiceEntity studentServiceEntity;
-    private final ModelMapper modelMapper;
+    private final BookingMapper bookingMapper;
     private final PenaltyService penaltyService;
 
-    public BookingServiceImpl(BookingRepository bookingRepository, ItemServiceEntity itemServiceEntity, PenaltyServiceEntity penaltyServiceEntity, StudentServiceEntity studentServiceEntity, ModelMapper modelMapper, PenaltyService penaltyService) {
-        this.bookingRepository = bookingRepository;
-        this.itemServiceEntity = itemServiceEntity;
-        this.penaltyServiceEntity = penaltyServiceEntity;
-        this.studentServiceEntity = studentServiceEntity;
-        this.modelMapper = modelMapper;
-        this.penaltyService = penaltyService;
+
+    private static final ZoneId ZONE_ID = ZoneId.of("America/Bogota");
+    private static final int BOOKING_DURATION_MINUTES = 10;
+
+
+
+    private long getCurrentTimeMillis() {
+        return ZonedDateTime.now(ZONE_ID).toInstant().toEpochMilli();
     }
 
-    private long getClosingHour(){
-        ZoneId zoneId = ZoneId.of("America/Bogota");
-        ZonedDateTime zonedDateTime = ZonedDateTime.now(zoneId);
-        return zonedDateTime.toInstant().toEpochMilli();
+    private void validateBookingRequest(Item item, Student student, LocalDateTime startTime) {
+        if (item.getItemQuantity() <= 0) {
+            throw new BookingConflict("No hay stock disponible para este artículo.");
+        }
+
+        penaltyServiceEntity.findActivePenalty(student.getUser().getId(), startTime)
+                .ifPresent(p -> {
+                    throw new BookingConflict("El estudiante tiene penalizaciones activas.");
+                });
+    }
+
+    @Override
+    public BookingResponseDTO createBooking(BookingCreateRequestDTO request) {
+        Item item = itemServiceEntity.getItemById(request.getItemId());
+        Student student = studentServiceEntity.findStudentByEmail(request.getEmail());
+
+        validateBookingRequest(item, student, request.getStartTime());
+
+        Booking booking = Booking.builder()
+                .startTime(request.getStartTime())
+                .endTime(request.getStartTime().plusMinutes(BOOKING_DURATION_MINUTES))
+                .bookingStatus(BookingStatusEnum.IN_PROCESS)
+                .student(student)
+                .item(item)
+                .build();
+
+        bookingRepository.save(booking);
+
+        item.setItemQuantity(item.getItemQuantity() - 1);
+        itemServiceEntity.saveItem(item);
+
+        return bookingMapper.toDto(booking);
+    }
+
+    @Override
+    public List<BookingResponseDTO> findAllBookings() {
+        return bookingRepository.findAll().stream()
+                .map(bookingMapper::toDto).toList();
+    }
+
+    @Override
+    public BookingResponseDTO findBookingById(Long id) {
+        Booking booking = bookingRepository.findById(id)
+                .orElseThrow(() -> new BookingNotFoundException("Booking no encontrado con id: " + id));
+        return bookingMapper.toDto(booking);
+    }
+
+    private Booking findAndPrepareBooking(Long bookingId, BookingUpdateRequestDTO request) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new BookingNotFoundException("Booking no encontrado con id: " + bookingId));
+
+        // MapStruct actualiza solo los campos no nulos
+        bookingMapper.updateEntityFromDto(request, booking);
+
+        // Actualizar item si se especifica
+        if (request.getItemId() != null) {
+            Item newItem = itemServiceEntity.getItemById(request.getItemId());
+            booking.setItem(newItem);
+        }
+
+        // Actualizar estudiante si se especifica
+        if (request.getEmail() != null) {
+            Student newStudent = studentServiceEntity.findStudentByEmail(request.getEmail());
+            booking.setStudent(newStudent);
+        }
+
+        // Validar y ajustar tiempos si se especifica el startTime
+        if (request.getStartTime() != null) {
+            validateBookingRequest(booking.getItem(), booking.getStudent(), request.getStartTime());
+            booking.setStartTime(request.getStartTime());
+            booking.setEndTime(request.getStartTime().plusMinutes(BOOKING_DURATION_MINUTES));
+        }
+
+        return bookingRepository.save(booking);
     }
 
 
     @Override
-    public BookingResponseDTO createBooking(BookingRequestDTO booking) {
+    public BookingResponseDTO updateBooking(Long id, BookingUpdateRequestDTO request) {
+        Booking booking = findAndPrepareBooking(id != null ? id : request.getBookingId(), request);
+        return bookingMapper.toDto(booking);
+    }
 
-        Item itemToBook = itemServiceEntity.getItemById(booking.getItemId());
-
-        Student student = studentServiceEntity.findStudentByEmail(booking.getEmail());
-        // Look for active penalties
-        Optional<Penalty> penalty = penaltyServiceEntity.findActivePenalty(student.getUser().getUserId(), booking.getStartTime());
-
-        if(penalty.isPresent() ) {
-            throw new BookingConflict("User can not book an item because there are active penalties");
-        }
-
-        if(itemToBook.getItemQuantity() <= 0){
-            throw new BookingConflict("Can not book because there is no stock for this item");
-        }
-
-        // Look if user exists
+    @Override
+    public BookingResponseDTO updateBookingStatus(BookingUpdateRequestDTO dto) {
+        Booking booking = findAndPrepareBooking(dto.getBookingId(), dto);
+        return bookingMapper.toDto(booking);
+    }
 
 
 
-        // Creating booking
 
-        Booking booking1 = Booking
-                .builder()
-                .startTime(booking.getStartTime())
-                .endTime(booking.getStartTime().plusMinutes(10L))
-                .bookingStatus(BookingStatusEnum.IN_PROCESS)
-                .student(student)
-                .item(itemToBook)
-                .build();
+    @Override
+    public void deleteBooking(Long id) {
+        Booking booking = bookingRepository.findById(id)
+                .orElseThrow(() -> new BookingNotFoundException("Booking no encontrado con id: " + id));
 
-        bookingRepository.save(booking1);
+        bookingRepository.delete(booking);
+    }
 
-        // Update item quantity
-        itemToBook.setItemQuantity(itemToBook.getItemQuantity() - 1);
-        itemServiceEntity.saveItem(itemToBook);
+    @Override
+    public List<BookingResponseDTO> findBookingsByStudentEmail(String email) {
+        Student student = studentServiceEntity.findStudentByEmail(email);
 
-        return modelMapper.map(booking1, BookingResponseDTO.class);
+        List<Booking> bookings = bookingRepository.findByStudentOrderByStartTimeDesc(student);
+
+        return bookings.stream()
+                .map(bookingMapper::toDto)
+                .toList();
+    }
+
+    @Override
+    public List<Booking> getAllBookingsSoonToEnd() {
+        long now = getCurrentTimeMillis();
+        int thresholdMinutes = (int) (BOOKING_DURATION_MINUTES * 0.9);
+
+        return bookingRepository.findAll().stream()
+                .filter(b -> b.getBookingStatus() == BookingStatusEnum.BOOKED)
+                .filter(b -> {
+                    long bookingStartMillis = b.getStartTime().plusMinutes(thresholdMinutes)
+                            .atZone(ZONE_ID).toInstant().toEpochMilli();
+                    return now >= bookingStartMillis;
+                })
+                .toList();
+    }
+
+
+    @Override
+    public void getBookingsWithNoProcessing() {
+        ZonedDateTime now = ZonedDateTime.now(ZONE_ID);
+        int thresholdMinutes = (int) (BOOKING_DURATION_MINUTES * 0.5);
+
+        bookingRepository.findAll().stream()
+                .filter(b -> b.getBookingStatus() == BookingStatusEnum.IN_PROCESS)
+                .filter(b -> {
+                    ZonedDateTime thresholdTime = b.getStartTime()
+                            .plusMinutes(thresholdMinutes)
+                            .atZone(ZONE_ID);
+                    return now.isAfter(thresholdTime);
+                })
+                .forEach(b -> updateBookingStatus(
+                        new BookingUpdateRequestDTO(
+                                b.getBookingId(),
+                                null,
+                                null,
+                                null,
+                                BookingStatusEnum.CANCELLED
+                        )
+                ));
+    }
+
+
+    @Override
+    public void BookingsNoReturned() {
+        long now = getCurrentTimeMillis();
+        String description = "El estudiante no devolvió el artículo en el tiempo estipulado.";
+
+        bookingRepository.findAll().stream()
+                .filter(b -> b.getBookingStatus() == BookingStatusEnum.IN_PROCESS_OF_RETURN)
+                .filter(b -> now >= getCurrentTimeMillis()) // O usar hora fija de cierre si aplica
+                .forEach(b -> penaltyService.createPenalty(new PenaltyRequestDTO(
+                        description, LocalDateTime.now(), 1L, b.getStudent().getUser().getEmail()
+                )));
     }
 
     @Override
     public Booking getBookingById(Long id) {
         return bookingRepository.findById(id)
                 .orElseThrow(() -> new BookingNotFoundException("Booking not found"));
-    }
-
-    @Override
-    public void updateBookingStatus(BookingUpdateStatusRequestDTO bookingUpdateStatusRequestDTO) {
-        Booking bookingToUpdate = getBookingById(bookingUpdateStatusRequestDTO.getBookingId());
-        bookingToUpdate.setBookingStatus(bookingUpdateStatusRequestDTO.getStatus());
-        bookingRepository.save(bookingToUpdate);
-    }
-
-    @Override
-    public List<Booking> getAllBookingsSoonToEnd() {
-        // Verify
-        List<Booking> bookings = bookingRepository.findAll();
-        List<Booking> bookingsAboutToEnd = new ArrayList<>();
-
-        // Convert it to millis
-        long timeNowMillis = System.currentTimeMillis();
-
-        int numberOfMinutes = (int) (10 * 0.9 );
-
-        for (Booking booking : bookings) {
-            // To the start date the 90%
-            LocalDateTime startTime = booking.getStartTime().plusMinutes(numberOfMinutes);
-            ZonedDateTime zdt = startTime.atZone(ZoneId.of("America/Bogota"));
-
-            long time = zdt.toInstant().toEpochMilli();
-
-            if((timeNowMillis >= time) && booking.getBookingStatus() == BookingStatusEnum.BOOKED){ // Change for booked
-                // Time almost over or over by now
-                bookingsAboutToEnd.add(booking);
-            }
-        }
-
-        return bookingsAboutToEnd;
-    }
-
-    @Override
-    public void getBookingsWithNoProcessing() {
-        // Verify
-        List<Booking> bookings = bookingRepository.findAll();
-
-        // Convert it to millis
-        long timeNowMillis = System.currentTimeMillis();
-
-        int numberOfMinutes = (int) (10 * 0.5 );
-
-        System.out.println(numberOfMinutes);
-        for (Booking booking : bookings) {
-            // To the start date the 90%
-            LocalDateTime startTime = booking.getStartTime().plusMinutes(numberOfMinutes);
-            ZonedDateTime zdt = startTime.atZone(ZoneId.of("America/Bogota"));
-
-            long time = zdt.toInstant().toEpochMilli();
-
-            if((timeNowMillis >= time) && booking.getBookingStatus() == BookingStatusEnum.IN_PROCESS){ // Change for booked
-                // Time almost over or over by now
-                updateBookingStatus(new BookingUpdateStatusRequestDTO(BookingStatusEnum.CANCELLED, booking.getBookingId()));
-            }
-        }
-
-    }
-
-    @Override
-    public void BookingsNoReturned() {
-        List<Booking> bookings = bookingRepository.findAll();
-        String description = "El estudiante no devolvió el articulo en el tiempo estipulado";
-        for (Booking booking : bookings) {
-            if(booking.getBookingStatus() == BookingStatusEnum.IN_PROCESS_OF_RETURN && System.currentTimeMillis() >= getClosingHour()){
-                penaltyService.createPenalty(new PenaltyRequestDTO(description, LocalDateTime.now(), 1L,booking.getStudent().getUser().getEmail()));
-            }
-        }
     }
 }
 

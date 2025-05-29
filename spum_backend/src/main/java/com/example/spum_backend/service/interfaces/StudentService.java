@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface StudentService {
-    void deleteStudent(String studentId);
+    void deleteStudent(String email);
     Optional<StudentResponseDTO> getStudent(String studentId);
     List<StudentResponseDTO> getAllStudents();
 }

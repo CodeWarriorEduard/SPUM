@@ -2,7 +2,7 @@ package com.example.spum_backend.service.impl;
 
 import com.example.spum_backend.dto.PenaltyTypeDTO;
 import com.example.spum_backend.entity.PenaltyType;
-import com.example.spum_backend.exception.PenaltyTypeNotFoundException;
+import com.example.spum_backend.exception.notFound.PenaltyTypeNotFoundException;
 import com.example.spum_backend.repository.PenaltyTypeRepository;
 import com.example.spum_backend.service.interfaces.PenaltyTypeService;
 import com.example.spum_backend.service.interfaces.internal.PenaltyTypeServiceEntity;

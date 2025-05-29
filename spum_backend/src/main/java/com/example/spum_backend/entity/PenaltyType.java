@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Entity
 @Data
 @AllArgsConstructor
@@ -21,5 +23,8 @@ public class PenaltyType {
     private String penaltyType;
 
     private int penaltyDays;
+
+    @OneToMany(mappedBy = "type")
+    private List<Penalty> penalties;
 
 }

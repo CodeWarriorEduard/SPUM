@@ -24,7 +24,7 @@ public class Penalty {
     private LocalDateTime penaltyDate;
     private LocalDateTime penaltyEndDate;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "penaltyTypeId", referencedColumnName = "penaltyTypeId")
     private PenaltyType type;
 

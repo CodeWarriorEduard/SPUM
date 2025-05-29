@@ -6,10 +6,7 @@ import jdk.jfr.Category;
 import lombok.AllArgsConstructor;
 import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -23,5 +20,11 @@ public class StudentController {
     @GetMapping
     public ResponseEntity<List<StudentResponseDTO>> getStudent() {
         return ResponseEntity.ok(studentService.getAllStudents());
+    }
+
+    @DeleteMapping("/{email}")
+    public ResponseEntity<Void> deleteStudent(@PathVariable String email) {
+        studentService.deleteStudent(email);
+        return ResponseEntity.noContent().build();
     }
 }

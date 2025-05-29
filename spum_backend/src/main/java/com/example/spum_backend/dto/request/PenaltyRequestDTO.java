@@ -1,5 +1,7 @@
 package com.example.spum_backend.dto.request;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,8 +12,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PenaltyRequestDTO {
-    String description;
-    LocalDateTime penaltyDate;
-    Long penaltyType;
-    String email;
+    @NotBlank String description;
+    @NotBlank LocalDateTime penaltyDate;
+    @NotNull Long penaltyType;
+    @NotBlank String email;
 }
